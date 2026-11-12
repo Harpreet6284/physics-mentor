@@ -14,7 +14,7 @@ if not api_key:
     st.error("Missing GEMINI_API_KEY. Please add it in your Streamlit app Secrets.")
     st.stop()
 
-client = genai.Client(api_key=api_key, http_options={"timeout": 20.0})
+client = genai.Client(api_key=api_key, http_options={"timeout": 60.0})
 
 # Sidebar Controls
 with st.sidebar:
@@ -36,7 +36,6 @@ uploaded_file = st.file_uploader("Upload question or diagram image (optional)", 
 image = None
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
-    # Resize large images so upload & processing stay fast
     image.thumbnail((1024, 1024))
     st.image(image, caption="Uploaded Question", use_container_width=True)
 
@@ -62,7 +61,7 @@ if st.button("Solve with First Principles", type="primary", use_container_width=
     if not question_text.strip() and image is None:
         st.warning("Please type a Physics question or upload an image first.")
     else:
-        with st.spinner("Analyzing system and deriving solution (max 20s)..."):
+        with st.spinner("Analyzing system and deriving solution..."):
             try:
                 user_prompt = f"Target Exam: {exam_mode}\nHelp Mode: {help_mode}\n\nQuestion:\n{question_text}"
                 
@@ -76,10 +75,16 @@ if st.button("Solve with First Principles", type="primary", use_container_width=
                     config=types.GenerateContentConfig(
                         system_instruction=SYSTEM_PROMPT,
                         temperature=0.2,
+                        thinking_config=types.ThinkingConfig(thinking_level="LOW"),
                     ),
                 )
                 
                 st.markdown("---")
+                st.markdown(response.text)
+                
+            except Exception as e:
+                st.error(f"Error: {e}")
+
                 st.markdown(response.text)
                 
             except Exception as e:
