@@ -1,3 +1,4 @@
+import time
 import streamlit as st
 from google import genai
 from google.genai import types
@@ -54,6 +55,8 @@ Rules:
    ### 4. Common Exam Trap & Sanity Check
 """
 
+FALLBACK_MODELS = ["gemini-3.8-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite"]
+
 if st.button("Solve with First Principles", type="primary", use_container_width=True):
     if not question_text.strip() and image is None:
         st.warning("Please type a Physics question or upload an image first.")
@@ -67,20 +70,35 @@ if st.button("Solve with First Principles", type="primary", use_container_width=
         st.markdown("---")
         output_placeholder = st.empty()
         full_text = ""
+        success = False
+        last_error = None
 
-        try:
-            with st.spinner("Connecting to Physics Mentor..."):
-                stream = client.models.generate_content_stream(
-                    model="gemini-3.8-flash",
-                    contents=contents,
-                    config=types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
-                        temperature=0.2,
-                        thinking_config=types.ThinkingConfig(thinking_level="LOW"),
-                    ),
-                )
-            for chunk in stream:
-                if chunk.text:
+        for model_name in FALLBACK_MODELS:
+            try:
+                with st.spinner(f"Solving with {model_name}..."):
+                    stream = client.models.generate_content_stream(
+                        model=model_name,
+                        contents=contents,
+                        config=types.GenerateContentConfig(
+                            system_instruction=SYSTEM_PROMPT,
+                            temperature=0.2,
+                        ),
+                    )
+                    for chunk in stream:
+                        if chunk.text:
+                            full_text += chunk.text
+                            output_placeholder.markdown(full_text)
+                success = True
+                break
+            except Exception as e:
+                last_error = e
+                full_text = ""
+                time.sleep(1)
+                continue
+
+        if not success:
+            st.error(f"Google's servers are temporarily overloaded across all models. Please wait 10 seconds and click Solve again. Details: {last_error}")
+
                     full_text += chunk.text
                     output_placeholder.markdown(full_text)
         except Exception as e:
