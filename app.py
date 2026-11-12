@@ -69,7 +69,7 @@ if st.button("Solve with First Principles", type="primary", use_container_width=
                     contents.append(image)
 
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model="gemini-3.8-flash",
                     contents=contents,
                     config=types.GenerateContentConfig(
                         system_instruction=SYSTEM_PROMPT,
