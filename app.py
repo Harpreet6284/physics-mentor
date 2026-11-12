@@ -14,7 +14,7 @@ if not api_key:
     st.error("Missing GEMINI_API_KEY. Please add it in your Streamlit app Secrets.")
     st.stop()
 
-client = genai.Client(api_key=api_key, http_options={"timeout": 60.0})
+client = genai.Client(api_key=api_key)
 
 # Sidebar Controls
 with st.sidebar:
@@ -36,7 +36,7 @@ uploaded_file = st.file_uploader("Upload question or diagram image (optional)", 
 image = None
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
-    image.thumbnail((1024, 1024))
+    image.thumbnail((800, 800))
     st.image(image, caption="Uploaded Question", use_container_width=True)
 
 SYSTEM_PROMPT = """
@@ -61,15 +61,19 @@ if st.button("Solve with First Principles", type="primary", use_container_width=
     if not question_text.strip() and image is None:
         st.warning("Please type a Physics question or upload an image first.")
     else:
-        with st.spinner("Analyzing system and deriving solution..."):
-            try:
-                user_prompt = f"Target Exam: {exam_mode}\nHelp Mode: {help_mode}\n\nQuestion:\n{question_text}"
-                
-                contents = [user_prompt]
-                if image is not None:
-                    contents.append(image)
+        user_prompt = f"Target Exam: {exam_mode}\nHelp Mode: {help_mode}\n\nQuestion:\n{question_text}"
+        
+        contents = [user_prompt]
+        if image is not None:
+            contents.append(image)
 
-                response = client.models.generate_content(
+        st.markdown("---")
+        output_placeholder = st.empty()
+        full_text = ""
+
+        try:
+            with st.spinner("Connecting to Physics Mentor..."):
+                stream = client.models.generate_content_stream(
                     model="gemini-3.8-flash",
                     contents=contents,
                     config=types.GenerateContentConfig(
@@ -78,12 +82,12 @@ if st.button("Solve with First Principles", type="primary", use_container_width=
                         thinking_config=types.ThinkingConfig(thinking_level="LOW"),
                     ),
                 )
-                
-                st.markdown("---")
-                st.markdown(response.text)
-                
-            except Exception as e:
-                st.error(f"Error: {e}")
+            for chunk in stream:
+                if chunk.text:
+                    full_text += chunk.text
+                    output_placeholder.markdown(full_text)
+        except Exception as e:
+            st.error(f"Could not complete request: {e}")
 
                 st.markdown(response.text)
                 
