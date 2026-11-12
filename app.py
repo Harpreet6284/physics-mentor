@@ -8,7 +8,6 @@ st.set_page_config(page_title="JEE/NEET First-Principles Physics Mentor", page_i
 st.title("⚛️ First-Principles Physics Mentor")
 st.caption("Built by Harpreet Prajapati | Structured step-by-step Physics solver for JEE & NEET")
 
-# Initialize Gemini Client using Streamlit Secrets
 api_key = st.secrets.get("GEMINI_API_KEY")
 if not api_key:
     st.error("Missing GEMINI_API_KEY. Please add it in your Streamlit app Secrets.")
@@ -16,7 +15,6 @@ if not api_key:
 
 client = genai.Client(api_key=api_key)
 
-# Sidebar Controls
 with st.sidebar:
     st.header("⚙️ Mentor Settings")
     exam_mode = st.selectbox("Target Exam", ["JEE Main", "JEE Advanced", "NEET"])
@@ -24,7 +22,6 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("**How to use:** Type a question, upload a diagram screenshot, or both.")
 
-# Main Input Area
 question_text = st.text_area(
     "Enter your Physics question:",
     placeholder="Example: A uniform rod of mass M and length L is hinged at one end...",
@@ -88,8 +85,3 @@ if st.button("Solve with First Principles", type="primary", use_container_width=
                     output_placeholder.markdown(full_text)
         except Exception as e:
             st.error(f"Could not complete request: {e}")
-
-                st.markdown(response.text)
-                
-            except Exception as e:
-                st.error(f"Request timed out or server busy. Please click Solve again. Details: {e}")
