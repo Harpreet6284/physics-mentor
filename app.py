@@ -56,29 +56,39 @@ Rules:
    ### 4. Common Exam Trap & Sanity Check
 """
 
+MODELS_TO_TRY = ["gemini-3.8-flash", "gemini-3.8-flash-lite", "gemini-3.0-flash"]
+
 if st.button("Solve with First Principles", type="primary", use_container_width=True):
     if not question_text.strip() and image is None:
         st.warning("Please type a Physics question or upload an image first.")
     else:
         with st.spinner("Analyzing system and deriving solution..."):
-            try:
-                user_prompt = f"Target Exam: {exam_mode}\nHelp Mode: {help_mode}\n\nQuestion:\n{question_text}"
-                
-                contents = [user_prompt]
-                if image is not None:
-                    contents.append(image)
+            user_prompt = f"Target Exam: {exam_mode}\nHelp Mode: {help_mode}\n\nQuestion:\n{question_text}"
+            
+            contents = [user_prompt]
+            if image is not None:
+                contents.append(image)
 
-                response = client.models.generate_content(
-                    model="gemini-3.8-flash",
-                    contents=contents,
-                    config=types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
-                        temperature=0.2,
-                    ),
-                )
-                
+            response = None
+            last_error = None
+
+            for model_name in MODELS_TO_TRY:
+                try:
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=contents,
+                        config=types.GenerateContentConfig(
+                            system_instruction=SYSTEM_PROMPT,
+                            temperature=0.2,
+                        ),
+                    )
+                    break
+                except Exception as e:
+                    last_error = e
+                    continue
+
+            if response is not None:
                 st.markdown("---")
                 st.markdown(response.text)
-                
-            except Exception as e:
-                st.error(f"Something went wrong: {e}")
+            else:
+                st.error(f"All models are temporarily busy. Please try again in a few seconds. Details: {last_error}")
