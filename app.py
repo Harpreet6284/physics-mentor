@@ -98,8 +98,3 @@ if st.button("Solve with First Principles", type="primary", use_container_width=
 
         if not success:
             st.error(f"Google's servers are temporarily overloaded across all models. Please wait 10 seconds and click Solve again. Details: {last_error}")
-
-                    full_text += chunk.text
-                    output_placeholder.markdown(full_text)
-        except Exception as e:
-            st.error(f"Could not complete request: {e}")
